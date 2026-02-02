@@ -114,13 +114,18 @@ export default function Upload() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                placeholder="e.g., Week 5 Practice Problems"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-              />
+              <Select value={title} onValueChange={setTitle} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select experiment" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 10 }, (_, i) => (
+                    <SelectItem key={i + 1} value={`Exp ${i + 1}`}>
+                      Exp {i + 1}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
