@@ -38,13 +38,17 @@ export function WorksheetCard({
 
   const handleDownload = async () => {
     try {
-      mockApi.incrementDownloadCount(id);
-      
       const { data } = supabase.storage.from('worksheets').getPublicUrl(filePath);
       
       if (data?.publicUrl) {
+        const link = document.createElement('a');
+        link.href = data.publicUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
         await supabase.rpc('increment_download_count', { worksheet_uuid: id });
-        window.open(data.publicUrl, '_blank');
         toast.success('Download started!');
         onDownload?.();
       } else {
