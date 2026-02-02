@@ -183,7 +183,9 @@ export default function Subject() {
               downloadCount={worksheet.download_count}
               filePath={worksheet.file_path}
               fileName={worksheet.file_name}
+              uploaderId={worksheet.uploader_id}
               onDownload={fetchWorksheets}
+              onDelete={fetchWorksheets}
             />
           ))}
         </div>

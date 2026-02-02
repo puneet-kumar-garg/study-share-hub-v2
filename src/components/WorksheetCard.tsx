@@ -1,11 +1,23 @@
-import { Download, Calendar, User, FileText } from 'lucide-react';
+import { Download, Calendar, User, FileText, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { getSubjectById } from '@/lib/constants';
-import { mockApi } from '@/lib/mockData';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface WorksheetCardProps {
   id: string;
@@ -18,7 +30,9 @@ interface WorksheetCardProps {
   downloadCount: number;
   filePath: string;
   fileName: string;
+  uploaderId: string;
   onDownload?: () => void;
+  onDelete?: () => void;
 }
 
 export function WorksheetCard({
@@ -32,9 +46,13 @@ export function WorksheetCard({
   downloadCount,
   filePath,
   fileName,
+  uploaderId,
   onDownload,
+  onDelete,
 }: WorksheetCardProps) {
+  const { user } = useAuth();
   const subjectInfo = getSubjectById(subject);
+  const canDelete = user?.id === uploaderId;
 
   const handleDownload = async () => {
     try {
@@ -44,7 +62,6 @@ export function WorksheetCard({
       
       if (error) {
         console.error('Storage error:', error);
-        // Fallback to public URL
         const { data: urlData } = supabase.storage.from('worksheets').getPublicUrl(filePath);
         if (urlData?.publicUrl) {
           window.open(urlData.publicUrl, '_blank');
@@ -62,7 +79,6 @@ export function WorksheetCard({
         URL.revokeObjectURL(url);
       }
       
-      // Update download count
       await supabase
         .from('worksheets')
         .update({ download_count: downloadCount + 1 })
@@ -73,6 +89,18 @@ export function WorksheetCard({
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Failed to download file');
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await supabase.storage.from('worksheets').remove([filePath]);
+      const { error } = await supabase.from('worksheets').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Worksheet deleted successfully');
+      onDelete?.();
+    } catch (error) {
+      toast.error('Failed to delete worksheet');
     }
   };
 
@@ -124,13 +152,38 @@ export function WorksheetCard({
       </CardContent>
       
       <CardFooter className="pt-3 border-t border-border/50">
-        <Button 
-          onClick={handleDownload}
-          className="w-full gradient-primary text-primary-foreground hover:opacity-90 transition-opacity"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          Download
-        </Button>
+        <div className="flex gap-2 w-full">
+          <Button 
+            onClick={handleDownload}
+            className="flex-1 gradient-primary text-primary-foreground hover:opacity-90 transition-opacity"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download
+          </Button>
+          {canDelete && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Worksheet</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{title}"? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );
