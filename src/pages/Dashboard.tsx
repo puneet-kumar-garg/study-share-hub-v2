@@ -6,9 +6,23 @@ import { StatsCard } from '@/components/StatsCard';
 import { SubjectCard } from '@/components/SubjectCard';
 import { WorksheetCard } from '@/components/WorksheetCard';
 import { useAuth } from '@/hooks/useAuth';
-import { mockApi, Worksheet } from '@/lib/mockData';
+import { supabase } from '@/integrations/supabase/client';
 import { SUBJECTS } from '@/lib/constants';
 import { Skeleton } from '@/components/ui/skeleton';
+
+interface Worksheet {
+  id: string;
+  title: string;
+  description: string | null;
+  subject: string;
+  status: 'completed' | 'unsolved';
+  file_path: string;
+  file_name: string;
+  download_count: number;
+  created_at: string;
+  uploader_id: string;
+  uploader_name?: string;
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -18,34 +32,59 @@ export default function Dashboard() {
   const [recentWorksheets, setRecentWorksheets] = useState<Worksheet[]>([]);
   const [subjectCounts, setSubjectCounts] = useState<Record<string, number>>({});
 
-  const fetchRecentWorksheets = () => {
-    const worksheets = mockApi.getWorksheets();
-    const recent = worksheets
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 10);
-    setRecentWorksheets(recent);
+  const fetchRecentWorksheets = async () => {
+    const { data: recent } = await supabase
+      .from('worksheets')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (recent) {
+      const uploaderIds = [...new Set(recent.map(w => w.uploader_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', uploaderIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p.full_name]) || []);
+
+      const worksheetsWithNames = recent.map(w => ({
+        ...w,
+        uploader_name: profileMap.get(w.uploader_id) || 'Unknown',
+      }));
+
+      setRecentWorksheets(worksheetsWithNames);
+    }
   };
 
   useEffect(() => {
-    function fetchDashboardData() {
+    async function fetchDashboardData() {
       if (!user) return;
 
       try {
-        // Initialize mock data
-        mockApi.init();
+        const { count: uploadCount } = await supabase
+          .from('worksheets')
+          .select('*', { count: 'exact', head: true })
+          .eq('uploader_id', user.id);
 
-        // Get stats
-        const stats = mockApi.getStats(user.id);
-        setTotalUploads(stats.totalUploads);
-        setTotalDownloads(stats.totalDownloads);
+        setTotalUploads(uploadCount || 0);
 
-        // Fetch recent worksheets
-        fetchRecentWorksheets();
+        const { data: userWorksheets } = await supabase
+          .from('worksheets')
+          .select('download_count')
+          .eq('uploader_id', user.id);
 
-        // Fetch subject counts
-        const worksheets = mockApi.getWorksheets();
+        const downloads = userWorksheets?.reduce((sum, w) => sum + w.download_count, 0) || 0;
+        setTotalDownloads(downloads);
+
+        await fetchRecentWorksheets();
+
+        const { data: worksheets } = await supabase
+          .from('worksheets')
+          .select('subject');
+
         const counts: Record<string, number> = {};
-        worksheets.forEach(w => {
+        worksheets?.forEach(w => {
           counts[w.subject] = (counts[w.subject] || 0) + 1;
         });
         setSubjectCounts(counts);
@@ -77,7 +116,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
@@ -91,7 +129,6 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
         <StatsCard
           title="Your Uploads"
@@ -116,7 +153,6 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Subjects Grid */}
       <div>
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <FileText className="w-5 h-5" />
@@ -133,7 +169,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Recent Worksheets */}
       <div>
         <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <Clock className="w-5 h-5" />
@@ -158,12 +193,12 @@ export default function Dashboard() {
                 title={worksheet.title}
                 description={worksheet.description}
                 subject={worksheet.subject}
-                status="completed"
-                uploadedBy={user?.user_metadata?.full_name || 'Unknown User'}
+                status={worksheet.status}
+                uploadedBy={worksheet.uploader_name || 'Unknown'}
                 uploadDate={worksheet.created_at}
                 downloadCount={worksheet.download_count}
                 filePath={worksheet.file_path}
-                fileName={worksheet.file_path}
+                fileName={worksheet.file_name}
                 onDownload={fetchRecentWorksheets}
               />
             ))}
