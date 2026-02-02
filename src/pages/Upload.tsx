@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
-import { mockApi } from '@/lib/mockData';
+import { supabase } from '@/integrations/supabase/client';
 import { SUBJECTS } from '@/lib/constants';
 import { toast } from 'sonner';
 
@@ -23,12 +23,10 @@ export default function Upload() {
   const [subject, setSubject] = useState('');
   const [status, setStatus] = useState<'completed' | 'unsolved'>('unsolved');
   const [file, setFile] = useState<File | null>(null);
-  const [tags, setTags] = useState('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      // Check file size (50MB limit)
       if (selectedFile.size > 52428800) {
         toast.error('File size must be less than 50MB');
         return;
@@ -63,20 +61,32 @@ export default function Upload() {
     setIsLoading(true);
 
     try {
-      const filePath = `${user.id}/${Date.now()}_${file.name}`;
-      const fileUrl = URL.createObjectURL(file);
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
       
-      const uploadedFiles = JSON.parse(localStorage.getItem('uploaded_files') || '{}');
-      uploadedFiles[filePath] = { url: fileUrl, name: file.name };
-      localStorage.setItem('uploaded_files', JSON.stringify(uploadedFiles));
-      
-      mockApi.addWorksheet({
-        title: title.trim(),
-        description: description.trim() || null,
-        subject: subject,
-        file_path: filePath,
-        user_id: user.id,
-      });
+      const { error: uploadError } = await supabase.storage
+        .from('worksheets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { error: insertError } = await supabase
+        .from('worksheets')
+        .insert({
+          title: title.trim(),
+          description: description.trim() || null,
+          subject: subject,
+          status: status,
+          file_path: filePath,
+          file_name: file.name,
+          file_size: file.size,
+          uploader_id: user.id,
+        });
+
+      if (insertError) {
+        await supabase.storage.from('worksheets').remove([filePath]);
+        throw insertError;
+      }
 
       toast.success('Worksheet uploaded successfully!');
       navigate('/dashboard');
@@ -102,7 +112,6 @@ export default function Upload() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
               <Input
@@ -114,7 +123,6 @@ export default function Upload() {
               />
             </div>
 
-            {/* Subject */}
             <div className="space-y-2">
               <Label htmlFor="subject">Subject *</Label>
               <Select value={subject} onValueChange={setSubject} required>
@@ -131,7 +139,6 @@ export default function Upload() {
               </Select>
             </div>
 
-            {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -143,7 +150,6 @@ export default function Upload() {
               />
             </div>
 
-            {/* Status */}
             <div className="space-y-3">
               <Label>Status *</Label>
               <RadioGroup value={status} onValueChange={(v) => setStatus(v as 'completed' | 'unsolved')}>
@@ -162,7 +168,6 @@ export default function Upload() {
               </RadioGroup>
             </div>
 
-            {/* File Upload */}
             <div className="space-y-2">
               <Label>File *</Label>
               <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-primary/50 transition-colors">
@@ -205,21 +210,6 @@ export default function Upload() {
               </div>
             </div>
 
-            {/* Tags */}
-            <div className="space-y-2">
-              <Label htmlFor="tags">Tags (optional)</Label>
-              <Input
-                id="tags"
-                placeholder="e.g., midterm, practice, chapter5 (comma-separated)"
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Separate tags with commas
-              </p>
-            </div>
-
-            {/* Submit */}
             <Button
               type="submit"
               className="w-full gradient-primary text-primary-foreground"
