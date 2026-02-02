@@ -36,34 +36,20 @@ export function WorksheetCard({
 }: WorksheetCardProps) {
   const subjectInfo = getSubjectById(subject);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     try {
       mockApi.incrementDownloadCount(id);
       
-      const uploadedFiles = JSON.parse(localStorage.getItem('uploaded_files') || '{}');
-      const fileData = uploadedFiles[filePath];
+      const { data } = supabase.storage.from('worksheets').getPublicUrl(filePath);
       
-      if (fileData && fileData.url) {
-        const link = document.createElement('a');
-        link.href = fileData.url;
-        link.download = fileData.name;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+      if (data?.publicUrl) {
+        await supabase.rpc('increment_download_count', { worksheet_uuid: id });
+        window.open(data.publicUrl, '_blank');
+        toast.success('Download started!');
+        onDownload?.();
       } else {
-        const blob = new Blob([`Demo worksheet: ${title}\nSubject: ${subject}`], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        toast.error('File not found');
       }
-      
-      toast.success('Download started!');
-      onDownload?.();
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Failed to download file');
