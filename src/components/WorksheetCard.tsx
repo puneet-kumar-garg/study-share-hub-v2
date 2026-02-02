@@ -38,21 +38,25 @@ export function WorksheetCard({
 
   const handleDownload = async () => {
     try {
-      const { data } = supabase.storage.from('worksheets').getPublicUrl(filePath);
+      const { data, error } = await supabase.storage
+        .from('worksheets')
+        .download(filePath);
       
-      if (data?.publicUrl) {
+      if (error) throw error;
+      
+      if (data) {
+        const url = URL.createObjectURL(data);
         const link = document.createElement('a');
-        link.href = data.publicUrl;
+        link.href = url;
         link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
         
         await supabase.rpc('increment_download_count', { worksheet_uuid: id });
         toast.success('Download started!');
         onDownload?.();
-      } else {
-        toast.error('File not found');
       }
     } catch (error) {
       console.error('Download error:', error);
