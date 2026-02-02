@@ -1,13 +1,27 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Search, Filter, ArrowUpDown, FileText, Plus } from 'lucide-react';
+import { Search, ArrowUpDown, FileText, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { WorksheetCard } from '@/components/WorksheetCard';
 import { getSubjectById } from '@/lib/constants';
-import { mockApi, Worksheet } from '@/lib/mockData';
+import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
+
+interface Worksheet {
+  id: string;
+  title: string;
+  description: string | null;
+  subject: string;
+  status: 'completed' | 'unsolved';
+  file_path: string;
+  file_name: string;
+  download_count: number;
+  created_at: string;
+  uploader_id: string;
+  uploader_name?: string;
+}
 
 export default function Subject() {
   const { subjectId } = useParams<{ subjectId: string }>();
@@ -15,19 +29,38 @@ export default function Subject() {
   const [filteredWorksheets, setFilteredWorksheets] = useState<Worksheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('newest');
 
   const subject = getSubjectById(subjectId || '');
 
-  const fetchWorksheets = () => {
+  const fetchWorksheets = async () => {
     if (!subjectId) return;
 
     setLoading(true);
     try {
-      mockApi.init();
-      const subjectWorksheets = mockApi.getWorksheetsBySubject(subjectId);
-      setWorksheets(subjectWorksheets);
+      const { data, error } = await supabase
+        .from('worksheets')
+        .select('*')
+        .eq('subject', subjectId);
+
+      if (error) throw error;
+
+      if (data) {
+        const uploaderIds = [...new Set(data.map(w => w.uploader_id))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', uploaderIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p.full_name]) || []);
+
+        const worksheetsWithNames = data.map(w => ({
+          ...w,
+          uploader_name: profileMap.get(w.uploader_id) || 'Unknown',
+        }));
+
+        setWorksheets(worksheetsWithNames);
+      }
     } catch (error) {
       console.error('Error fetching worksheets:', error);
     } finally {
@@ -42,7 +75,6 @@ export default function Subject() {
   useEffect(() => {
     let result = [...worksheets];
 
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(w =>
@@ -51,7 +83,6 @@ export default function Subject() {
       );
     }
 
-    // Sort
     if (sortBy === 'newest') {
       result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     } else if (sortBy === 'oldest') {
@@ -61,7 +92,7 @@ export default function Subject() {
     }
 
     setFilteredWorksheets(result);
-  }, [worksheets, searchQuery, statusFilter, sortBy]);
+  }, [worksheets, searchQuery, sortBy]);
 
   if (!subject) {
     return (
@@ -77,7 +108,6 @@ export default function Subject() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{subject.name}</h1>
@@ -93,7 +123,6 @@ export default function Subject() {
         </Link>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -117,7 +146,6 @@ export default function Subject() {
         </Select>
       </div>
 
-      {/* Worksheets Grid */}
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map(i => (
@@ -149,12 +177,12 @@ export default function Subject() {
               title={worksheet.title}
               description={worksheet.description}
               subject={worksheet.subject}
-              status="completed"
-              uploadedBy={user?.user_metadata?.full_name || 'Unknown User'}
+              status={worksheet.status}
+              uploadedBy={worksheet.uploader_name || 'Unknown'}
               uploadDate={worksheet.created_at}
               downloadCount={worksheet.download_count}
               filePath={worksheet.file_path}
-              fileName={worksheet.file_path}
+              fileName={worksheet.file_name}
               onDownload={fetchWorksheets}
             />
           ))}
