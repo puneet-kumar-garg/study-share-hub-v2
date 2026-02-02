@@ -42,9 +42,16 @@ export function WorksheetCard({
         .from('worksheets')
         .download(filePath);
       
-      if (error) throw error;
-      
-      if (data) {
+      if (error) {
+        console.error('Storage error:', error);
+        // Fallback to public URL
+        const { data: urlData } = supabase.storage.from('worksheets').getPublicUrl(filePath);
+        if (urlData?.publicUrl) {
+          window.open(urlData.publicUrl, '_blank');
+        } else {
+          throw new Error('File not accessible');
+        }
+      } else if (data) {
         const url = URL.createObjectURL(data);
         const link = document.createElement('a');
         link.href = url;
@@ -53,11 +60,16 @@ export function WorksheetCard({
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        
-        await supabase.rpc('increment_download_count', { worksheet_uuid: id });
-        toast.success('Download started!');
-        onDownload?.();
       }
+      
+      // Update download count
+      await supabase
+        .from('worksheets')
+        .update({ download_count: downloadCount + 1 })
+        .eq('id', id);
+        
+      toast.success('Download started!');
+      onDownload?.();
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Failed to download file');

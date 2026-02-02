@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
-import { mockApi, Worksheet } from '@/lib/mockData';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { getSubjectById } from '@/lib/constants';
 import { toast } from 'sonner';
@@ -21,6 +21,16 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+interface Worksheet {
+  id: string;
+  title: string;
+  subject: string;
+  status: 'completed' | 'unsolved';
+  download_count: number;
+  created_at: string;
+  file_path: string;
+}
+
 export default function Profile() {
   const { user } = useAuth();
   const [worksheets, setWorksheets] = useState<Worksheet[]>([]);
@@ -28,13 +38,17 @@ export default function Profile() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    function fetchProfileData() {
+    async function fetchProfileData() {
       if (!user) return;
 
       try {
-        mockApi.init();
-        const userWorksheets = mockApi.getWorksheetsByUser(user.id);
-        setWorksheets(userWorksheets);
+        const { data: worksheetsData } = await supabase
+          .from('worksheets')
+          .select('id, title, subject, status, download_count, created_at, file_path')
+          .eq('uploader_id', user.id)
+          .order('created_at', { ascending: false });
+
+        setWorksheets(worksheetsData || []);
       } catch (error) {
         console.error('Error fetching profile data:', error);
       } finally {
@@ -45,10 +59,18 @@ export default function Profile() {
     fetchProfileData();
   }, [user]);
 
-  const handleDelete = (worksheetId: string) => {
+  const handleDelete = async (worksheetId: string, filePath: string) => {
     setDeletingId(worksheetId);
     try {
-      mockApi.deleteWorksheet(worksheetId);
+      await supabase.storage.from('worksheets').remove([filePath]);
+
+      const { error } = await supabase
+        .from('worksheets')
+        .delete()
+        .eq('id', worksheetId);
+
+      if (error) throw error;
+
       setWorksheets(prev => prev.filter(w => w.id !== worksheetId));
       toast.success('Worksheet deleted successfully');
     } catch (error: any) {
@@ -189,7 +211,7 @@ export default function Profile() {
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction
-                              onClick={() => handleDelete(worksheet.id)}
+                              onClick={() => handleDelete(worksheet.id, worksheet.file_path)}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
                               Delete
