@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 interface UserPermission {
   id: string;
   email: string;
-  role: 'admin' | 'uploader' | 'viewer';
+  can_upload: boolean;
   created_at: string;
 }
 
@@ -143,11 +143,10 @@ export default function UserManagement() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={userPerm.role === 'viewer' ? 'secondary' : 'default'}>
-                      {userPerm.role === 'admin' ? 'Admin' : 
-                       userPerm.role === 'uploader' ? 'Can Upload' : 'Viewer'}
+                    <Badge variant={userPerm.can_upload ? 'default' : 'secondary'}>
+                      {userPerm.can_upload ? 'Can Upload' : 'Viewer'}
                     </Badge>
-                    {userPerm.role !== 'viewer' && userPerm.email !== user.email && (
+                    {userPerm.can_upload && userPerm.email !== user.email && (
                       <Button
                         variant="outline"
                         size="sm"

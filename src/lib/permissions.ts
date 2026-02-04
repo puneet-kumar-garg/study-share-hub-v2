@@ -16,7 +16,7 @@ export const canUserUpload = async (userEmail: string): Promise<boolean> => {
   try {
     const { data, error } = await supabase
       .from('user_permissions')
-      .select('role')
+      .select('can_upload')
       .eq('email', userEmail.toLowerCase())
       .single();
     
@@ -25,7 +25,7 @@ export const canUserUpload = async (userEmail: string): Promise<boolean> => {
       return false;
     }
     
-    return data?.role === 'admin' || data?.role === 'uploader';
+    return data?.can_upload || false;
   } catch (error) {
     console.log('Permission check failed (denying access):', error);
     return false;
@@ -38,7 +38,7 @@ export const grantUploadPermission = async (email: string): Promise<boolean> => 
       .from('user_permissions')
       .upsert({
         email: email.toLowerCase(),
-        role: 'uploader'
+        can_upload: true
       });
     
     return !error;
@@ -52,7 +52,7 @@ export const revokeUploadPermission = async (email: string): Promise<boolean> =>
   try {
     const { error } = await supabase
       .from('user_permissions')
-      .update({ role: 'viewer' })
+      .update({ can_upload: false })
       .eq('email', email.toLowerCase());
     
     return !error;
