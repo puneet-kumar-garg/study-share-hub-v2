@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
+import { canUserUpload } from '@/lib/permissions';
 import { supabase } from '@/integrations/supabase/client';
 import { SUBJECTS } from '@/lib/constants';
 import { toast } from 'sonner';
@@ -22,6 +23,16 @@ export default function Upload() {
   const [description, setDescription] = useState('');
   const [subject, setSubject] = useState('');
   const [file, setFile] = useState<File | null>(null);
+
+  // Check if user can upload
+  if (!user || !canUserUpload(user.email || '')) {
+    return (
+      <div className="max-w-2xl mx-auto animate-fade-in text-center py-12">
+        <h1 className="text-2xl font-bold text-foreground mb-4">Upload Not Allowed</h1>
+        <p className="text-muted-foreground">You don't have permission to upload worksheets.</p>
+      </div>
+    );
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];

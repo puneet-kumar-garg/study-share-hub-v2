@@ -8,7 +8,7 @@ import { WorksheetCard } from '@/components/WorksheetCard';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { SUBJECTS } from '@/lib/constants';
-import { Skeleton } from '@/components/ui/skeleton';
+import { canUserUpload } from '@/lib/permissions';
 
 interface Worksheet {
   id: string;
@@ -31,6 +31,8 @@ export default function Dashboard() {
   const [totalDownloads, setTotalDownloads] = useState(0);
   const [recentWorksheets, setRecentWorksheets] = useState<Worksheet[]>([]);
   const [subjectCounts, setSubjectCounts] = useState<Record<string, number>>({});
+
+  const canUpload = user ? canUserUpload(user.email || '') : false;
 
   const fetchRecentWorksheets = async () => {
     const { data: recent } = await supabase
@@ -121,12 +123,14 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground">Welcome back! Here's your overview.</p>
         </div>
-        <Link to="/upload">
-          <Button className="gradient-primary text-primary-foreground shadow-glow">
-            <Plus className="w-4 h-4 mr-2" />
-            Upload Worksheet
-          </Button>
-        </Link>
+        {canUpload && (
+          <Link to="/upload">
+            <Button className="gradient-primary text-primary-foreground shadow-glow">
+              <Plus className="w-4 h-4 mr-2" />
+              Upload Worksheet
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
