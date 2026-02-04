@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { SUBJECTS } from '@/lib/constants';
 import { canUserUpload, isAdmin } from '@/lib/permissions';
+import { migrateExistingUsersToDownloadOnly } from '@/lib/migratePermissions';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Worksheet {
@@ -38,6 +39,12 @@ export default function Dashboard() {
   useEffect(() => {
     async function checkPermissions() {
       if (!user) return;
+      
+      // Run migration for existing users (one-time)
+      if (isAdmin(user.email || '')) {
+        await migrateExistingUsersToDownloadOnly();
+      }
+      
       const uploadPerm = await canUserUpload(user.email || '');
       const adminPerm = isAdmin(user.email || '');
       console.log('User email:', user.email);
