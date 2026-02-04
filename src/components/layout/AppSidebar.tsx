@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
+import { canUserUpload } from '@/lib/permissions';
 import {
   Sidebar,
   SidebarContent,
@@ -31,7 +32,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SUBJECTS } from '@/lib/constants';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -55,10 +56,27 @@ export function AppSidebar() {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const [subjectsOpen, setSubjectsOpen] = useState(true);
+  const [canUpload, setCanUpload] = useState(false);
+
+  useEffect(() => {
+    async function checkUploadPermission() {
+      if (!user) return;
+      const uploadPerm = await canUserUpload(user.email || '');
+      setCanUpload(uploadPerm);
+    }
+    checkUploadPermission();
+  }, [user]);
 
   const isActive = (path: string) => location.pathname === path;
   const isSubjectActive = SUBJECTS.some(s => location.pathname === `/subjects/${s.id}`);
 
+  // Filter nav items based on permissions
+  const filteredNavItems = mainNavItems.filter(item => {
+    if (item.url === '/upload') {
+      return canUpload;
+    }
+    return true;
+  });
   return (
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="p-4 border-b border-sidebar-border">
@@ -82,7 +100,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavItems.map((item) => (
+              {filteredNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
