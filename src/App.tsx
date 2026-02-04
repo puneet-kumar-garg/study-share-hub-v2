@@ -12,6 +12,8 @@ import Subject from "./pages/Subject";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
+import UserManagement from "./pages/UserManagement";
+
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -96,6 +98,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute>
+                  <UserManagement />
                 </ProtectedRoute>
               }
             />
