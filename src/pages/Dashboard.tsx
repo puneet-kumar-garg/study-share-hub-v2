@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { SUBJECTS } from '@/lib/constants';
 import { canUserUpload } from '@/lib/permissions';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Worksheet {
   id: string;
