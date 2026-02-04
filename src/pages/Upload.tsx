@@ -21,7 +21,6 @@ export default function Upload() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [subject, setSubject] = useState('');
-  const [status, setStatus] = useState<'completed' | 'unsolved'>('unsolved');
   const [file, setFile] = useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,7 +75,7 @@ export default function Upload() {
           title: title.trim(),
           description: description.trim() || null,
           subject: subject,
-          status: status,
+          status: 'completed',
           file_path: filePath,
           file_name: file.name,
           file_size: file.size,
@@ -153,24 +152,6 @@ export default function Upload() {
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
               />
-            </div>
-
-            <div className="space-y-3">
-              <Label>Status *</Label>
-              <RadioGroup value={status} onValueChange={(v) => setStatus(v as 'completed' | 'unsolved')}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="completed" id="completed" />
-                  <Label htmlFor="completed" className="text-sm font-normal cursor-pointer">
-                    ✓ Completed - I've solved this worksheet
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="unsolved" id="unsolved" />
-                  <Label htmlFor="unsolved" className="text-sm font-normal cursor-pointer">
-                    ○ Unsolved - This needs to be solved
-                  </Label>
-                </div>
-              </RadioGroup>
             </div>
 
             <div className="space-y-2">

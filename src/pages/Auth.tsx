@@ -92,20 +92,7 @@ export default function Auth() {
           <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-glow">
             <BookOpen className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            <Select defaultValue="exp1">
-              <SelectTrigger className="w-full bg-transparent border-white/20 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 10 }, (_, i) => (
-                  <SelectItem key={i + 1} value={`exp${i + 1}`}>
-                    Exp {i + 1}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </h1>
+          <h1 className="text-3xl font-bold text-white mb-2">Worksheet Exchange Hub</h1>
           <p className="text-white/70">Share and learn together</p>
         </div>
 
