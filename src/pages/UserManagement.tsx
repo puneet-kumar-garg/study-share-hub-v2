@@ -58,12 +58,17 @@ export default function UserManagement() {
       return;
     }
 
-    const success = await grantUploadPermission(newUserEmail, user.id);
-    if (success) {
-      toast.success('Upload permission granted');
-      setNewUserEmail('');
-      fetchUsers();
-    } else {
+    try {
+      const success = await grantUploadPermission(newUserEmail, user.email || '');
+      if (success) {
+        toast.success('Upload permission granted');
+        setNewUserEmail('');
+        fetchUsers();
+      } else {
+        toast.error('Failed to grant permission');
+      }
+    } catch (error) {
+      console.error('Error granting permission:', error);
       toast.error('Failed to grant permission');
     }
   };

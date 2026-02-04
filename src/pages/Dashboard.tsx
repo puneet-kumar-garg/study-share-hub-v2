@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SUBJECTS } from '@/lib/constants';
 import { canUserUpload, isAdmin } from '@/lib/permissions';
 import { migrateExistingUsersToDownloadOnly } from '@/lib/migratePermissions';
+import { setupUserPermissionsTable } from '@/lib/setupDatabase';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Worksheet {
@@ -40,8 +41,9 @@ export default function Dashboard() {
     async function checkPermissions() {
       if (!user) return;
       
-      // Run migration for existing users (one-time)
+      // Setup database table and run migration for existing users (one-time)
       if (isAdmin(user.email || '')) {
+        await setupUserPermissionsTable();
         await migrateExistingUsersToDownloadOnly();
       }
       
