@@ -40,6 +40,8 @@ export default function Dashboard() {
       if (!user) return;
       const uploadPerm = await canUserUpload(user.email || '');
       const adminPerm = isAdmin(user.email || '');
+      console.log('User email:', user.email);
+      console.log('Is admin:', adminPerm);
       setCanUpload(uploadPerm);
       setUserIsAdmin(adminPerm);
     }

@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // Admin email - only this user can manage permissions
-const ADMIN_EMAIL = 'puneetkumargarg@gmail.com';
+const ADMIN_EMAIL = 'puneet@gmail.com';
 
 export const isAdmin = (userEmail: string): boolean => {
   return userEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase();
