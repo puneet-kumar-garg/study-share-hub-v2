@@ -8,6 +8,11 @@ export const isAdmin = (userEmail: string): boolean => {
 };
 
 export const canUserUpload = async (userEmail: string): Promise<boolean> => {
+  // Admin always has upload permissions
+  if (isAdmin(userEmail)) {
+    return true;
+  }
+  
   try {
     const { data } = await supabase
       .from('user_permissions')
@@ -17,6 +22,7 @@ export const canUserUpload = async (userEmail: string): Promise<boolean> => {
     
     return data?.can_upload || false;
   } catch {
+    // Default: users can only download, not upload
     return false;
   }
 };
