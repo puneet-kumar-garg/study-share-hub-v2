@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 interface UserPermission {
   id: string;
   email: string;
-  can_upload: boolean;
+  role: 'admin' | 'uploader' | 'viewer';
   created_at: string;
 }
 
@@ -59,7 +59,7 @@ export default function UserManagement() {
     }
 
     try {
-      const success = await grantUploadPermission(newUserEmail, user.email || '');
+      const success = await grantUploadPermission(newUserEmail);
       if (success) {
         toast.success('Upload permission granted');
         setNewUserEmail('');
@@ -143,10 +143,11 @@ export default function UserManagement() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={userPerm.can_upload ? 'default' : 'secondary'}>
-                      {userPerm.can_upload ? 'Can Upload' : 'Download Only'}
+                    <Badge variant={userPerm.role === 'viewer' ? 'secondary' : 'default'}>
+                      {userPerm.role === 'admin' ? 'Admin' : 
+                       userPerm.role === 'uploader' ? 'Can Upload' : 'Viewer'}
                     </Badge>
-                    {userPerm.can_upload && userPerm.email !== user.email && (
+                    {userPerm.role !== 'viewer' && userPerm.email !== user.email && (
                       <Button
                         variant="outline"
                         size="sm"

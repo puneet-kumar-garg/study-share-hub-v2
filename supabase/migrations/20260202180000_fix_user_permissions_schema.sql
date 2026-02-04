@@ -1,4 +1,10 @@
--- Create user_permissions table
+-- Fix user_permissions table schema
+-- Add user_id column and change granted_by to UUID
+
+-- First, drop the existing table if it exists
+DROP TABLE IF EXISTS public.user_permissions;
+
+-- Recreate with correct schema
 CREATE TABLE public.user_permissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -31,6 +37,23 @@ CREATE TRIGGER update_user_permissions_updated_at
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
 -- Insert admin user with upload permissions
-INSERT INTO public.user_permissions (email, can_upload, granted_by)
-VALUES ('puneet@gmail.com', true, (SELECT id FROM auth.users WHERE email = 'puneet@gmail.com' LIMIT 1))
-ON CONFLICT (email) DO UPDATE SET can_upload = true;
+-- First check if admin user exists in auth.users, if not, this will be handled when they sign up
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM auth.users WHERE email = 'puneet@gmail.com') THEN
+    INSERT INTO public.user_permissions (user_id, email, can_upload, granted_by)
+    SELECT 
+      id, 
+      email, 
+      true, 
+      id
+    FROM auth.users 
+    WHERE email = 'puneet@gmail.com'
+    ON CONFLICT (email) DO UPDATE SET can_upload = true;
+  ELSE
+    -- Create a pending permission record for admin
+    INSERT INTO public.user_permissions (user_id, email, can_upload, granted_by)
+    VALUES (null, 'puneet@gmail.com', true, null)
+    ON CONFLICT (email) DO UPDATE SET can_upload = true;
+  END IF;
+END $$;

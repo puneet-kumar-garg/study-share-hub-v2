@@ -152,6 +152,12 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
     NEW.email
   );
+  
+  -- Update any pending permissions for this email
+  UPDATE public.user_permissions 
+  SET user_id = NEW.id 
+  WHERE email = NEW.email AND user_id IS NULL;
+  
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;

@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { WorksheetCard } from '@/components/WorksheetCard';
 import { getSubjectById } from '@/lib/constants';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { canUserUpload } from '@/lib/permissions';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Worksheet {
@@ -25,13 +27,24 @@ interface Worksheet {
 
 export default function Subject() {
   const { subjectId } = useParams<{ subjectId: string }>();
+  const { user } = useAuth();
   const [worksheets, setWorksheets] = useState<Worksheet[]>([]);
   const [filteredWorksheets, setFilteredWorksheets] = useState<Worksheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<string>('newest');
+  const [canUpload, setCanUpload] = useState(false);
 
   const subject = getSubjectById(subjectId || '');
+
+  useEffect(() => {
+    async function checkUploadPermission() {
+      if (!user) return;
+      const uploadPerm = await canUserUpload(user.email || '');
+      setCanUpload(uploadPerm);
+    }
+    checkUploadPermission();
+  }, [user]);
 
   const fetchWorksheets = async () => {
     if (!subjectId) return;
@@ -115,12 +128,14 @@ export default function Subject() {
             {filteredWorksheets.length} worksheet{filteredWorksheets.length !== 1 ? 's' : ''} available
           </p>
         </div>
-        <Link to="/upload">
-          <Button className="gradient-primary text-primary-foreground">
-            <Plus className="w-4 h-4 mr-2" />
-            Upload New
-          </Button>
-        </Link>
+        {canUpload && (
+          <Link to="/upload">
+            <Button className="gradient-primary text-primary-foreground">
+              <Plus className="w-4 h-4 mr-2" />
+              Upload New
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -160,7 +175,7 @@ export default function Subject() {
               ? 'No worksheets uploaded for this subject yet.'
               : 'No worksheets match your filters.'}
           </p>
-          {worksheets.length === 0 && (
+          {worksheets.length === 0 && canUpload && (
             <Link to="/upload">
               <Button variant="link" className="text-primary">
                 Be the first to upload!
