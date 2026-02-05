@@ -79,23 +79,44 @@ export function WorksheetCard({
         URL.revokeObjectURL(url);
       }
       
+      console.log('Attempting to increment download count for worksheet:', id);
+      console.log('Current user:', user?.email);
+      
       // Use the secure function to increment download count
-      const { error: rpcError } = await supabase.rpc('increment_download_count', { 
+      const { data: rpcData, error: rpcError } = await supabase.rpc('increment_download_count', { 
         worksheet_uuid: id 
       });
       
       if (rpcError) {
-        console.error('Failed to update download count:', rpcError);
+        console.error('RPC Error details:', rpcError);
+        // Fallback to direct update if RPC fails
+        console.log('Trying fallback direct update...');
+        const { error: updateError } = await supabase
+          .from('worksheets')
+          .update({ download_count: downloadCount + 1 })
+          .eq('id', id);
+        
+        if (updateError) {
+          console.error('Direct update also failed:', updateError);
+        } else {
+          console.log('Direct update succeeded');
+        }
+      } else {
+        console.log('RPC call succeeded:', rpcData);
       }
       
       // Track the download in downloads table
       if (user) {
-        await supabase
+        const { error: downloadTrackError } = await supabase
           .from('downloads')
           .upsert({
             worksheet_id: id,
             user_id: user.id
           }, { onConflict: 'worksheet_id,user_id' });
+        
+        if (downloadTrackError) {
+          console.error('Download tracking error:', downloadTrackError);
+        }
       }
         
       toast.success('Download started!');
