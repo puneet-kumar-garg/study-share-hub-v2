@@ -79,13 +79,21 @@ export function WorksheetCard({
         URL.revokeObjectURL(url);
       }
       
-      await supabase
-        .from('worksheets')
-        .update({ download_count: downloadCount + 1 })
-        .eq('id', id);
+      // Use the database function to increment download count
+      await supabase.rpc('increment_download_count', { worksheet_uuid: id });
+      
+      // Track the download in downloads table
+      if (user) {
+        await supabase
+          .from('downloads')
+          .upsert({
+            worksheet_id: id,
+            user_id: user.id
+          }, { onConflict: 'worksheet_id,user_id' });
+      }
         
       toast.success('Download started!');
-      onDownload?.();
+      onDownload?.(); // This will refresh the parent component
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Failed to download file');
