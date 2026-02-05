@@ -79,14 +79,13 @@ export function WorksheetCard({
         URL.revokeObjectURL(url);
       }
       
-      // Directly increment download count
-      const { error: updateError } = await supabase
-        .from('worksheets')
-        .update({ download_count: downloadCount + 1 })
-        .eq('id', id);
+      // Use the secure function to increment download count
+      const { error: rpcError } = await supabase.rpc('increment_download_count', { 
+        worksheet_uuid: id 
+      });
       
-      if (updateError) {
-        console.error('Failed to update download count:', updateError);
+      if (rpcError) {
+        console.error('Failed to update download count:', rpcError);
       }
       
       // Track the download in downloads table
