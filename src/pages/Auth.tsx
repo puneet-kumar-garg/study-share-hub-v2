@@ -202,9 +202,28 @@ export default function Auth() {
           </Tabs>
         </Card>
 
-        <p className="text-center text-white/50 text-sm mt-6">
-          Idea by Arunangshu Roy • Developed by Puneet Kumar Garg
-        </p>
+        <div className="text-center text-white/50 text-sm mt-6 space-y-2">
+          <p>Idea by Arunangshu Roy • Developed by Puneet Kumar Garg</p>
+          <div className="flex justify-center gap-4">
+            <a 
+              href="https://github.com/puneet-kumar-garg" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-white/50 hover:text-white transition-colors"
+            >
+              GitHub
+            </a>
+            <span className="text-white/30">•</span>
+            <a 
+              href="https://www.linkedin.com/in/puneet-kumar-garg/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-white/50 hover:text-white transition-colors"
+            >
+              LinkedIn
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );

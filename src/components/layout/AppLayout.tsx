@@ -20,10 +20,31 @@ export function AppLayout({ children }: AppLayoutProps) {
             {children}
           </div>
           <footer className="border-t border-border py-4 px-6 text-center text-sm text-muted-foreground bg-card/30">
-            <p>
-              <span className="font-medium">Idea by:</span> Arunangshu Roy • 
-              <span className="font-medium ml-2">Developed by:</span> Puneet Kumar Garg
-            </p>
+            <div className="space-y-2">
+              <p>
+                <span className="font-medium">Idea by:</span> Arunangshu Roy • 
+                <span className="font-medium ml-2">Developed by:</span> Puneet Kumar Garg
+              </p>
+              <div className="flex justify-center gap-4">
+                <a 
+                  href="https://github.com/puneet-kumar-garg" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  GitHub
+                </a>
+                <span className="text-muted-foreground/50">•</span>
+                <a 
+                  href="https://www.linkedin.com/in/puneet-kumar-garg/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  LinkedIn
+                </a>
+              </div>
+            </div>
           </footer>
         </main>
       </div>
