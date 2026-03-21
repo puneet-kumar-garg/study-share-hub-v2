@@ -31,7 +31,7 @@ interface WorksheetCardProps {
   filePath: string;
   fileName: string;
   uploaderId: string;
-  onDownload?: () => void;
+  onDownload?: (id: string) => void;
   onDelete?: () => void;
 }
 
@@ -83,27 +83,7 @@ export function WorksheetCard({
       console.log('Current user:', user?.email);
       
       // Use the secure function to increment download count
-      const { data: rpcData, error: rpcError } = await supabase.rpc('increment_download_count', { 
-        worksheet_uuid: id 
-      });
-      
-      if (rpcError) {
-        console.error('RPC Error details:', rpcError);
-        // Fallback to direct update if RPC fails
-        console.log('Trying fallback direct update...');
-        const { error: updateError } = await supabase
-          .from('worksheets')
-          .update({ download_count: downloadCount + 1 })
-          .eq('id', id);
-        
-        if (updateError) {
-          console.error('Direct update also failed:', updateError);
-        } else {
-          console.log('Direct update succeeded');
-        }
-      } else {
-        console.log('RPC call succeeded:', rpcData);
-      }
+      await supabase.rpc('increment_download_count', { worksheet_uuid: id });
       
       // Track the download in downloads table
       if (user) {
@@ -120,7 +100,7 @@ export function WorksheetCard({
       }
         
       toast.success('Download started!');
-      onDownload?.(); // This will refresh the parent component
+      onDownload?.(id);
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Failed to download file');

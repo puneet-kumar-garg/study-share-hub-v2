@@ -199,7 +199,9 @@ export default function Subject() {
               filePath={worksheet.file_path}
               fileName={worksheet.file_name}
               uploaderId={worksheet.uploader_id}
-              onDownload={fetchWorksheets}
+              onDownload={(id) => {
+                setWorksheets(prev => prev.map(w => w.id === id ? { ...w, download_count: w.download_count + 1 } : w));
+              }}
               onDelete={fetchWorksheets}
             />
           ))}
