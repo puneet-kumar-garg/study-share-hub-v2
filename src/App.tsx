@@ -16,6 +16,10 @@ import UserManagement from "./pages/UserManagement";
 import Requests from "./pages/Requests";
 import { useEffect, useState } from "react";
 import { Analytics } from "@vercel/analytics/react";
+import { injectSpeedInsights } from "@vercel/speed-insights";
+
+// Initialize Speed Insights
+injectSpeedInsights();
 
 const queryClient = new QueryClient();
 
