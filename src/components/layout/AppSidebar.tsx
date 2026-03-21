@@ -12,10 +12,12 @@ import {
   Code2,
   Network,
   Trophy,
+  MessageSquare,
+  Shield,
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
-import { canUserUpload } from '@/lib/permissions';
+import { canUserUpload, isAdmin } from '@/lib/permissions';
 import {
   Sidebar,
   SidebarContent,
@@ -48,6 +50,8 @@ const mainNavItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Upload Worksheet', url: '/upload', icon: Upload },
   { title: 'My Profile', url: '/profile', icon: User },
+  { title: 'Requests', url: '/requests', icon: MessageSquare },
+  { title: 'User Management', url: '/users', icon: Shield, adminOnly: true },
 ];
 
 export function AppSidebar() {
@@ -57,12 +61,14 @@ export function AppSidebar() {
   const { signOut, user } = useAuth();
   const [subjectsOpen, setSubjectsOpen] = useState(true);
   const [canUpload, setCanUpload] = useState(false);
+  const [adminUser, setAdminUser] = useState(false);
 
   useEffect(() => {
     async function checkUploadPermission() {
       if (!user) return;
       const uploadPerm = await canUserUpload(user.email || '');
       setCanUpload(uploadPerm);
+      setAdminUser(isAdmin(user.email || ''));
     }
     checkUploadPermission();
   }, [user]);
@@ -70,11 +76,9 @@ export function AppSidebar() {
   const isActive = (path: string) => location.pathname === path;
   const isSubjectActive = SUBJECTS.some(s => location.pathname === `/subjects/${s.id}`);
 
-  // Filter nav items based on permissions
   const filteredNavItems = mainNavItems.filter(item => {
-    if (item.url === '/upload') {
-      return canUpload;
-    }
+    if (item.url === '/upload') return canUpload;
+    if ((item as any).adminOnly) return adminUser;
     return true;
   });
   return (

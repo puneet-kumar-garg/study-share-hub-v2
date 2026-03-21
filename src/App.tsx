@@ -13,6 +13,7 @@ import Subject from "./pages/Subject";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import UserManagement from "./pages/UserManagement";
+import Requests from "./pages/Requests";
 import { useEffect, useState } from "react";
 import { Analytics } from "@vercel/analytics/react";
 
@@ -140,6 +141,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/requests"
+              element={
+                <ProtectedRoute>
+                  <Requests />
                 </ProtectedRoute>
               }
             />
