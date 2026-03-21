@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Send } from 'lucide-react';
+import { MessageSquare, Send, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -105,9 +105,23 @@ export default function Requests() {
                     <span className="text-xs text-muted-foreground">
                       {format(new Date(req.created_at), 'MMM d, yyyy • h:mm a')}
                     </span>
-                    <Badge variant={req.status === 'pending' ? 'secondary' : 'default'}>
-                      {req.status}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={req.status === 'pending' ? 'secondary' : 'default'}>
+                        {req.status}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                        onClick={async () => {
+                          const { error } = await supabase.from('requests').delete().eq('id', req.id);
+                          if (error) toast.error('Failed to delete request');
+                          else { toast.success('Request deleted'); fetchRequests(); }
+                        }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
                   <p className="text-sm">{req.message}</p>
                   {req.reply && (
