@@ -94,22 +94,17 @@ export default function Dashboard() {
 
         setTotalUploads(uploadCount || 0);
 
-        const { data: userWorksheets } = await supabase
+        const { data: allWorksheets } = await supabase
           .from('worksheets')
-          .select('download_count')
-          .eq('uploader_id', user.id);
+          .select('download_count, subject');
 
-        const downloads = userWorksheets?.reduce((sum, w) => sum + w.download_count, 0) || 0;
+        const downloads = allWorksheets?.reduce((sum, w) => sum + w.download_count, 0) || 0;
         setTotalDownloads(downloads);
 
         await fetchRecentWorksheets();
 
-        const { data: worksheets } = await supabase
-          .from('worksheets')
-          .select('subject');
-
         const counts: Record<string, number> = {};
-        worksheets?.forEach(w => {
+        allWorksheets?.forEach(w => {
           counts[w.subject] = (counts[w.subject] || 0) + 1;
         });
         setSubjectCounts(counts);
@@ -174,10 +169,10 @@ export default function Dashboard() {
           gradient="gradient-primary"
         />
         <StatsCard
-          title="Downloads Received"
+          title="Total Downloads"
           value={totalDownloads}
           icon={Download}
-          description="Times your worksheets were downloaded"
+          description="Total downloads across all worksheets"
           gradient="gradient-accent"
         />
         <StatsCard
