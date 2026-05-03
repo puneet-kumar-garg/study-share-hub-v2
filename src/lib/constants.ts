@@ -1,12 +1,5 @@
 export const SUBJECTS = [
   {
-    id: 'principles_of_ai',
-    name: 'Principles of Artificial Intelligence',
-    shortName: 'AI Principles',
-    icon: 'Brain',
-    color: 'from-violet-500 to-purple-600',
-  },
-  {
     id: 'numerical_methods',
     name: 'Numerical Methods',
     shortName: 'Numerical',
