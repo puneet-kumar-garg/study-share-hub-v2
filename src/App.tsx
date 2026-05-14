@@ -16,10 +16,7 @@ import UserManagement from "./pages/UserManagement";
 import Requests from "./pages/Requests";
 import { useEffect, useState } from "react";
 import { Analytics } from "@vercel/analytics/react";
-import { injectSpeedInsights } from "@vercel/speed-insights";
-
-// Initialize Speed Insights
-injectSpeedInsights();
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 const queryClient = new QueryClient();
 
@@ -161,6 +158,7 @@ const App = () => (
         </AuthProvider>
       </BrowserRouter>
       <Analytics />
+      <SpeedInsights />
     </TooltipProvider>
   </QueryClientProvider>
 );
