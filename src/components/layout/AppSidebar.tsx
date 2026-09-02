@@ -35,7 +35,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useState, useEffect } from 'react';
-import { SUBJECTS } from '@/lib/constants';
+import { SUBJECTS, SUBJECTS_6TH_SEM, SUBJECTS_7TH_SEM } from '@/lib/constants';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Brain,
@@ -59,7 +59,8 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { signOut, user } = useAuth();
-  const [subjectsOpen, setSubjectsOpen] = useState(true);
+  const [sem6Open, setSem6Open] = useState(true);
+  const [sem7Open, setSem7Open] = useState(true);
   const [canUpload, setCanUpload] = useState(false);
   const [adminUser, setAdminUser] = useState(false);
 
@@ -123,13 +124,13 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup className="mt-4">
-          <Collapsible open={subjectsOpen} onOpenChange={setSubjectsOpen}>
+          <Collapsible open={sem7Open} onOpenChange={setSem7Open}>
             <CollapsibleTrigger className="w-full">
               <SidebarGroupLabel className="flex items-center justify-between text-sidebar-foreground/50 text-xs uppercase tracking-wider mb-2 cursor-pointer hover:text-sidebar-foreground/70">
                 {!collapsed && (
                   <>
-                    <span>Subjects</span>
-                    <ChevronRight className={`w-4 h-4 transition-transform ${subjectsOpen ? 'rotate-90' : ''}`} />
+                    <span>7th Semester</span>
+                    <ChevronRight className={`w-4 h-4 transition-transform ${sem7Open ? 'rotate-90' : ''}`} />
                   </>
                 )}
               </SidebarGroupLabel>
@@ -137,7 +138,45 @@ export function AppSidebar() {
             <CollapsibleContent>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {SUBJECTS.map((subject) => {
+                  {SUBJECTS_7TH_SEM.map((subject) => {
+                    const Icon = iconMap[subject.icon];
+                    return (
+                      <SidebarMenuItem key={subject.id}>
+                        <SidebarMenuButton asChild>
+                          <NavLink
+                            to={`/subjects/${subject.id}`}
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent text-sm"
+                            activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                          >
+                            <Icon className="w-4 h-4 flex-shrink-0" />
+                            {!collapsed && <span className="truncate">{subject.shortName}</span>}
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-4">
+          <Collapsible open={sem6Open} onOpenChange={setSem6Open}>
+            <CollapsibleTrigger className="w-full">
+              <SidebarGroupLabel className="flex items-center justify-between text-sidebar-foreground/50 text-xs uppercase tracking-wider mb-2 cursor-pointer hover:text-sidebar-foreground/70">
+                {!collapsed && (
+                  <>
+                    <span>6th Semester</span>
+                    <ChevronRight className={`w-4 h-4 transition-transform ${sem6Open ? 'rotate-90' : ''}`} />
+                  </>
+                )}
+              </SidebarGroupLabel>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {SUBJECTS_6TH_SEM.map((subject) => {
                     const Icon = iconMap[subject.icon];
                     return (
                       <SidebarMenuItem key={subject.id}>
