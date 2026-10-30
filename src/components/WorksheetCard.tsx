@@ -31,7 +31,7 @@ interface WorksheetCardProps {
   filePath: string;
   fileName: string;
   uploaderId: string;
-  onDownload?: (id: string) => void;
+  onDownload?: () => void;
   onDelete?: () => void;
 }
 
@@ -61,7 +61,6 @@ export function WorksheetCard({
         .download(filePath);
       
       if (error) {
-        console.error('Storage error:', error);
         const { data: urlData } = supabase.storage.from('worksheets').getPublicUrl(filePath);
         if (urlData?.publicUrl) {
           window.open(urlData.publicUrl, '_blank');
@@ -78,29 +77,19 @@ export function WorksheetCard({
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       }
-      
-      console.log('Attempting to increment download count for worksheet:', id);
-      console.log('Current user:', user?.email);
-      
-      // Use the secure function to increment download count
-      await supabase.rpc('increment_download_count', { worksheet_uuid: id });
-      
-      // Track the download in downloads table
-      if (user) {
-        const { error: downloadTrackError } = await supabase
-          .from('downloads')
-          .upsert({
-            worksheet_id: id,
-            user_id: user.id
-          }, { onConflict: 'worksheet_id,user_id' });
-        
-        if (downloadTrackError) {
-          console.error('Download tracking error:', downloadTrackError);
-        }
+
+      const { error: rpcError } = await supabase.rpc('increment_download_count', { worksheet_uuid: id });
+      if (rpcError) {
+        console.error('Failed to increment download count:', rpcError);
       }
-        
+
+      if (user) {
+        const { error: insertError } = await supabase.from('downloads').insert({ worksheet_id: id, user_id: user.id });
+        if (insertError) console.error('Downloads insert error:', insertError);
+      }
+
       toast.success('Download started!');
-      onDownload?.(id);
+      onDownload?.();
     } catch (error) {
       console.error('Download error:', error);
       toast.error('Failed to download file');
